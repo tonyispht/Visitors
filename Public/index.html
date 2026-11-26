@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visitors — embed generator</title>
+<style>
+  :root{--bg:#070a14;--card:#0e1424;--bd:#1f2a44;--fg:#e6f0ff;--mut:#8196b8;--ac:#00e5ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#10234a 0,transparent 60%),var(--bg);color:var(--fg);
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:1100px;margin:0 auto;padding:24px 16px 60px}
+  h1{margin:0 0 4px;font-size:24px} h1 span{color:var(--ac)}
+  .sub{color:var(--mut);margin:0 0 20px}
+  .grid{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:16px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px}
+  .card h2{margin:0 0 12px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+  label{display:block;margin:10px 0 4px;font-size:12px;color:var(--mut)}
+  input[type=text],input[type=number],select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--bd);background:#0a1020;color:var(--fg);font:inherit}
+  input[type=color]{width:100%;height:36px;border:1px solid var(--bd);border-radius:8px;background:#0a1020;padding:2px}
+  input[type=range]{width:100%;accent-color:var(--ac)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .chk{display:flex;gap:8px;align-items:center;margin:10px 0 0;color:var(--fg);font-size:13px}
+  button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:#12203d;color:var(--fg);padding:8px 12px;border-radius:8px}
+  button:hover{border-color:var(--ac)}
+  button.primary{background:var(--ac);color:#001018;border-color:var(--ac);font-weight:600}
+  .tabs{display:flex;gap:6px;margin-bottom:8px}
+  .tabs button.on{border-color:var(--ac);color:var(--ac)}
+  pre{margin:0;padding:12px;background:#050810;border:1px solid var(--bd);border-radius:10px;overflow:auto;white-space:pre-wrap;word-break:break-all;
+    font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#bfe9ff}
+  iframe{width:100%;height:380px;border:1px solid var(--bd);border-radius:12px;background:#000;display:block}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+  .note{color:var(--mut);font-size:12.5px;margin:8px 0 0}
+  code{background:#050810;padding:1px 5px;border-radius:5px;color:#bfe9ff}
+  .stack>*+*{margin-top:16px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Visitors <span>●</span> embed generator</h1>
+  <p class="sub">Live visitor sound, counter and feed for your own games &amp; apps. Worker: <code id="origin"></code> · now <b id="live">…</b></p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Settings</h2>
+      <label for="site">Site ID (one per game/app — letters, numbers, - _)</label>
+      <input type="text" id="site" value="my-game" maxlength="48">
+      <label for="name">Name shown in the feed (blank = page title)</label>
+      <input type="text" id="name" placeholder="Neon Corridor" maxlength="80">
+      <label for="label">Panel title</label>
+      <input type="text" id="label" value="Visitors" maxlength="30">
+
+      <div class="row">
+        <div><label for="position">Position</label>
+          <select id="position"><option>bottom-right</option><option>bottom-left</option><option>top-right</option><option>top-left</option></select></div>
+        <div><label for="theme">Theme</label>
+          <select id="theme"><option>neon</option><option>dark</option><option>light</option><option>glass</option></select></div>
+      </div>
+      <div class="row">
+        <div><label for="accent">Accent</label><input type="color" id="accent" value="#00e5ff"></div>
+        <div><label for="panel">Panel</label>
+          <select id="panel"><option value="collapsed">collapsed pill</option><option value="open">open</option><option value="hidden">hidden (track only)</option></select></div>
+      </div>
+      <div class="row">
+        <div><label for="show">Pill counter</label>
+          <select id="show"><option value="both">online + total</option><option value="online">online only</option><option value="total">total only</option><option value="none">label only</option></select></div>
+        <div><label for="feed">Feed rows</label><input type="number" id="feed" value="6" min="1" max="20"></div>
+      </div>
+
+      <label class="chk"><input type="checkbox" id="sound" checked> Play sound on new visitor</label>
+      <div class="row">
+        <div><label for="soundType">Sound</label>
+          <select id="soundType"><option>chime</option><option>ding</option><option>bell</option><option>coin</option><option>blip</option><option>pop</option></select></div>
+        <div><label for="volume">Volume</label><input type="range" id="volume" min="0" max="1" step="0.05" value="0.5"></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="leaveSound"> Soft sound when a visitor leaves</label>
+
+      <label for="showTo">Who sees the panel &amp; hears sound?</label>
+      <select id="showTo"><option value="everyone">everyone who opens the page</option><option value="owner">only me (owner mode) — others are tracked silently</option></select>
+      <p class="note">Owner mode: open any of your pages once with <code>?visitors=owner</code>. That browser is never counted as a visitor. Undo with <code>?visitors=forget</code>.</p>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <h2>Live preview</h2>
+        <iframe id="stage" title="preview"></iframe>
+        <div class="bar">
+          <button id="test">▶ Test sound &amp; animation</button>
+          <button id="sim">👤 Simulate a real visitor (6s)</button>
+        </div>
+        <p class="note">Click once inside the preview to unlock browser audio. “Simulate” opens a real connection, so it counts as a visit for this site ID.</p>
+      </div>
+
+      <div class="card">
+        <h2>Embed code</h2>
+        <div class="tabs"><button id="t-html" class="on">HTML tag</button><button id="t-js">JS loader</button></div>
+        <pre id="code"></pre>
+        <div class="bar"><button class="primary" id="copy">Copy</button></div>
+        <p class="note">Paste before <code>&lt;/body&gt;</code> (or run the JS loader from inside a single-file game). Tracking works the moment it loads.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const ORIGIN = location.origin;
+const $ = (id) => document.getElementById(id);
+$("origin").textContent = ORIGIN;
+
+const DEFAULTS = { position:"bottom-right", theme:"neon", accent:"#00e5ff", panel:"collapsed", show:"both", feed:"6",
+  label:"Visitors", sound:"on", soundType:"chime", volume:"0.5", leaveSound:"off", showTo:"everyone" };
+const KEBAB = { soundType:"sound-type", leaveSound:"leave-sound", showTo:"show-to" };
+
+function values() {
+  const v = {
+    site: $("site").value.trim().replace(/[^a-z0-9_-]/gi, "-").replace(/^[^a-z0-9]+/i, "") || "my-game",
+    name: $("name").value.trim(),
+    position: $("position").value, theme: $("theme").value, accent: $("accent").value, panel: $("panel").value,
+    show: $("show").value, feed: String(Math.min(20, Math.max(1, parseInt($("feed").value) || 6))),
+    label: $("label").value.trim() || "Visitors",
+    sound: $("sound").checked ? "on" : "off", soundType: $("soundType").value, volume: $("volume").value,
+    leaveSound: $("leaveSound").checked ? "on" : "off", showTo: $("showTo").value,
+  };
+  return v;
+}
+function attrList(v, forPreview) {
+  const a = [["data-site", v.site]];
+  if (v.name) a.push(["data-name", v.name]);
+  for (const k of Object.keys(DEFAULTS)) if (v[k] !== DEFAULTS[k]) a.push(["data-" + (KEBAB[k] || k), v[k]]);
+  if (forPreview) a.push(["data-observer", "true"]);
+  return a;
+}
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+const camel = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+
+let mode = "html";
+function buildCode() {
+  const v = values(), a = attrList(v);
+  if (mode === "html") {
+    return `<script async src="${ORIGIN}/widget.js"\n` + a.map(([k, x]) => `  ${k}="${esc(x)}"`).join("\n") + `></` + `script>`;
+  }
+  return `(function () {\n  var s = document.createElement("script");\n  s.async = true;\n  s.src = "${ORIGIN}/widget.js";\n` +
+    a.map(([k, x]) => `  s.dataset.${camel(k.slice(5))} = ${JSON.stringify(x)};`).join("\n") +
+    `\n  document.head.appendChild(s);\n})();`;
+}
+
+let timer;
+function refresh() {
+  $("code").textContent = buildCode();
+  clearTimeout(timer);
+  timer = setTimeout(renderPreview, 350);
+}
+function renderPreview() {
+  try { localStorage.removeItem("visitors:mute"); } catch {}
+  const a = attrList(values(), true).map(([k, x]) => `${k}="${esc(x)}"`).join(" ");
+  $("stage").srcdoc = `<!doctype html><body style="margin:0;background:linear-gradient(135deg,#0b1020,#1a1030);color:#789;font:14px system-ui;display:grid;place-items:center;height:100vh">` +
+    `<div style="text-align:center">your game / app<br><small>(click here once to enable sound)</small></div>` +
+    `<scr` + `ipt async src="${ORIGIN}/widget.js?v=${Date.now()}" ${a}></scr` + `ipt></body>`;
+}
+
+document.querySelectorAll("input,select").forEach((e) => e.addEventListener("input", refresh));
+$("t-html").onclick = () => { mode = "html"; $("t-html").classList.add("on"); $("t-js").classList.remove("on"); refresh(); };
+$("t-js").onclick = () => { mode = "js"; $("t-js").classList.add("on"); $("t-html").classList.remove("on"); refresh(); };
+$("copy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("code").textContent); $("copy").textContent = "Copied ✓"; }
+  catch { const r = document.createRange(); r.selectNodeContents($("code")); getSelection().removeAllRanges(); getSelection().addRange(r); $("copy").textContent = "Selected — press Ctrl/Cmd+C"; }
+  setTimeout(() => ($("copy").textContent = "Copy"), 1800);
+};
+$("test").onclick = () => { const w = $("stage").contentWindow; if (w && w.Visitors) w.Visitors.test(); };
+$("sim").onclick = () => {
+  const q = new URLSearchParams({ site: values().site, sid: "sim-" + Math.random().toString(36).slice(2), page: values().name || "Simulated visitor", ref: "example.com", dev: "mobile" });
+  const s = new WebSocket(ORIGIN.replace(/^http/, "ws") + "/ws?" + q);
+  setTimeout(() => { try { s.close(); } catch {} }, 6000);
+};
+
+async function poll() {
+  try {
+    const r = await fetch(`/api/stats?site=${encodeURIComponent(values().site)}`, { cache: "no-store" });
+    const j = await r.json();
+    $("live").textContent = `${j.online} online · ${j.total.toLocaleString()} visits (${values().site})`;
+  } catch { $("live").textContent = "unavailable"; }
+}
+setInterval(poll, 10000);
+$("site").addEventListener("change", poll);
+
+refresh();
+poll();
+</script>
+</body>
+</html>
