@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Visitors · Live</title>
+<style>
+  :root{--bg:#070a14;--card:#0e1424;--bd:#1f2a44;--fg:#e6f0ff;--mut:#8196b8;--ac:#00e5ff;--live:#3ddc84}
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{background:radial-gradient(1200px 600px at 80% -10%,#10234a 0,transparent 60%),var(--bg);color:var(--fg);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  button,input,select{font:inherit;color:inherit}
+  button{cursor:pointer;border:1px solid var(--bd);background:#12203d;padding:7px 12px;border-radius:8px}
+  button:hover{border-color:var(--ac)}
+  button.primary{background:var(--ac);color:#001018;border-color:var(--ac);font-weight:600}
+  input[type=text],input[type=password],select{padding:8px 10px;border-radius:8px;border:1px solid var(--bd);background:#0a1020}
+  [hidden]{display:none!important}
+
+  /* gate */
+  #gate{min-height:100vh;display:grid;place-items:center;padding:20px}
+  #gate form{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:22px;width:min(360px,100%)}
+  #gate h1{margin:0 0 4px;font-size:20px} #gate p{margin:0 0 14px;color:var(--mut)}
+  #gate input{width:100%;margin-bottom:10px}
+  #gate .err{color:#ff7a8a;min-height:1.3em;margin:8px 0 0;font-size:13px}
+
+  /* header */
+  header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:12px 18px;
+    background:rgba(7,10,20,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
+  header h1{margin:0;font-size:17px;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#555;flex:none}
+  .on .dot{background:var(--live);box-shadow:0 0 9px var(--live)}
+  .sum{color:var(--mut)} .sum b{color:var(--ac);font-size:18px;font-variant-numeric:tabular-nums}
+  .sp{flex:1}
+  .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .ctl label{display:flex;gap:6px;align-items:center;color:var(--mut);font-size:12.5px}
+  .ctl input[type=range]{width:90px;accent-color:var(--ac)}
+  #lock{background:#2a2410;color:#ffd666;border-bottom:1px solid #5a4a14;padding:8px 18px;text-align:center;font-size:13px}
+
+  /* layout */
+  main{display:grid;grid-template-columns:1fr 320px;gap:16px;padding:16px 18px 40px;align-items:start}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+  h2{margin:0 0 10px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+  #cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+  .empty{color:var(--mut);padding:26px 10px;text-align:center;border:1px dashed var(--bd);border-radius:12px;grid-column:1/-1}
+
+  /* site cards */
+  .card{position:relative;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;transition:border-color .3s,box-shadow .3s,opacity .3s}
+  .card.live{border-color:color-mix(in srgb,var(--live) 65%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--live) 22%,transparent)}
+  .card.idle{opacity:.72}
+  .card.hit{animation:hit 1.1s}
+  @keyframes hit{0%{box-shadow:0 0 0 0 var(--ac);background:#12304a}100%{box-shadow:0 0 0 18px transparent}}
+  .top{display:flex;align-items:center;gap:8px}
+  .name{font-weight:650;font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .live .dot{background:var(--live);box-shadow:0 0 9px var(--live)}
+  .tiny{background:none;border:0;padding:2px 5px;opacity:.55;font-size:13px;border-radius:6px}
+  .tiny:hover{opacity:1;background:#ffffff14}
+  .card .x{opacity:0} .card:hover .x{opacity:.55}
+  .sid{color:var(--mut);font:11.5px ui-monospace,Menlo,Consolas,monospace;margin:2px 0 8px}
+  .nums{display:flex;gap:22px}
+  .nums div{display:flex;flex-direction:column}
+  .nums b{font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--ac)}
+  .nums div:first-child b{color:var(--live)} .idle .nums div:first-child b{color:var(--mut)}
+  .nums span{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  .last{margin-top:10px;color:var(--mut);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip{margin-top:8px;font-size:11.5px;color:var(--mut);background:#0a1020;border:1px solid var(--bd);padding:2px 8px;border-radius:999px}
+  .pop{animation:pop .45s} @keyframes pop{40%{transform:scale(1.25)}}
+
+  /* activity */
+  aside{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;max-height:calc(100vh - 110px);overflow:auto}
+  @media(max-width:900px){aside{max-height:none}}
+  #feed{list-style:none;margin:0;padding:0}
+  #feed li{display:flex;gap:10px;align-items:center;padding:7px 8px;border-radius:9px;margin-bottom:4px;background:#ffffff0a}
+  #feed li.new{animation:slide .6s} @keyframes slide{from{opacity:0;transform:translateX(14px);background:#00e5ff44}}
+  .flag{font-size:22px;line-height:1;flex:none}
+  .l1{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .l2{color:var(--mut);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .txt{min-width:0}
+  .add{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .add input{flex:1;min-width:140px}
+  .hint{color:var(--mut);font-size:12px;margin:6px 0 0}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="gate" hidden>
+  <form id="gateForm">
+    <h1>Visitors <span style="color:var(--ac)">●</span> live</h1>
+    <p>Private dashboard. Enter your key.</p>
+    <input type="password" id="keyIn" placeholder="Dashboard key" autocomplete="current-password" autofocus>
+    <button class="primary" type="submit" style="width:100%">Unlock</button>
+    <div class="err" id="gateErr"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header id="hdr">
+    <h1><span class="dot"></span> Visitors live</h1>
+    <div class="sum"><b id="sumOn">0</b> online · <b id="sumSites">0</b> of <span id="sumAll">0</span> sites live</div>
+    <div class="sp"></div>
+    <div class="ctl">
+      <button id="muteBtn" title="Sound on/off">🔊 Sound on</button>
+      <label>Sound
+        <select id="mode"></select>
+      </label>
+      <label>Vol <input type="range" id="vol" min="0" max="1" step="0.05"></label>
+      <label><input type="checkbox" id="leave"> leave sound</label>
+      <label><input type="checkbox" id="awake"> keep screen on</label>
+      <button id="test">▶ Test</button>
+      <button id="out" title="Forget the key on this device">Lock</button>
+    </div>
+  </header>
+  <div id="lock" hidden>🔈 Click or tap anywhere once to enable sound (browsers require it)</div>
+
+  <main>
+    <section>
+      <h2>Sites</h2>
+      <div id="cards"></div>
+      <form class="add" id="addForm">
+        <input type="text" id="addIn" placeholder="Add a site ID that isn't listed yet" maxlength="48" autocomplete="off">
+        <button type="submit">Add</button>
+      </form>
+      <p class="hint">Sites appear automatically the next time someone (or you, via <code>?visitors=owner</code>) loads a page with the widget.</p>
+    </section>
+    <aside>
+      <h2>Latest visitors, all sites</h2>
+      <ul id="feed"></ul>
+    </aside>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = "visitors:dash:key", PREFS = "visitors:dash:prefs";
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+
+  /* ---------- sounds (same synth voices as the widget) ---------- */
+  var SOUNDS = {
+    chime: function (p) { p(880, 0, 0.55, "sine", 0.5); p(1318.5, 0.13, 0.8, "sine", 0.4); },
+    ding:  function (p) { p(659.3, 0, 0.35, "sine", 0.5); p(523.3, 0.3, 0.8, "sine", 0.5); },
+    bell:  function (p) { p(1046.5, 0, 1.1, "sine", 0.45); p(2093, 0, 0.6, "sine", 0.15); p(1568, 0.18, 1, "sine", 0.3); },
+    coin:  function (p) { p(987.8, 0, 0.09, "square", 0.18); p(1318.5, 0.09, 0.45, "square", 0.18); },
+    blip:  function (p) { p(520, 0, 0.14, "triangle", 0.6, 980); },
+    pop:   function (p) { p(520, 0, 0.16, "sine", 0.8, 110); }
+  };
+  var NAMES = Object.keys(SOUNDS);
+
+  var prefs = { mode: "site", vol: 0.6, leave: false, awake: false, mute: false, off: {} };
+  try { var saved = JSON.parse(store.get(PREFS) || "{}"); for (var k in saved) prefs[k] = saved[k]; } catch (e) {}
+  if (!prefs.off) prefs.off = {};
+  var savePrefs = function () { store.set(PREFS, JSON.stringify(prefs)); };
+
+  var ctx = null, master = null;
+  function unlock() {
+    try {
+      if (!ctx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        ctx = new AC();
+        master = ctx.createGain();
+        master.gain.value = prefs.vol;
+        master.connect(ctx.destination);
+        ctx.onstatechange = syncLock;
+      }
+      if (ctx.state !== "running") ctx.resume().then(syncLock, function () {});
+      syncLock();
+    } catch (e) {}
+  }
+  ["pointerdown", "touchend", "keydown", "click"].forEach(function (ev) {
+    window.addEventListener(ev, unlock, { capture: true, passive: true });
+  });
+  function syncLock() { $("lock").hidden = prefs.mute || (ctx && ctx.state === "running"); }
+
+  function play(name) {
+    if (prefs.mute || !ctx || ctx.state !== "running" || !SOUNDS[name]) return;
+    var t0 = ctx.currentTime;
+    SOUNDS[name](function (freq, delay, dur, type, vol, slideTo) {
+      var o = ctx.createOscillator(), g = ctx.createGain(), t = t0 + delay;
+      o.type = type;
+      o.frequency.setValueAtTime(freq, t);
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(master);
+      o.start(t); o.stop(t + dur + 0.05);
+    });
+  }
+  function playLeave() {
+    if (prefs.mute || !ctx || ctx.state !== "running") return;
+    var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(440, t);
+    o.frequency.exponentialRampToValueAtTime(220, t + 0.25);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.35);
+  }
+  function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
+  function soundFor(site) { return prefs.mode === "site" ? NAMES[hash(site) % NAMES.length] : prefs.mode; }
+
+  /* ---------- state ---------- */
+  var sites = {}, els = {}, recent = [], got = false;
+  var dn = null;
+  try { dn = new Intl.DisplayNames(["en"], { type: "region" }); } catch (e) {}
+  function countryName(cc) { try { return (dn && cc && dn.of(cc)) || cc || ""; } catch (e) { return cc || ""; } }
+  function flag(cc) { return /^[A-Z]{2}$/.test(cc || "") ? String.fromCodePoint.apply(null, cc.split("").map(function (c) { return 127397 + c.charCodeAt(0); })) : "🌐"; }
+  var ICON = { desktop: "🖥", mobile: "📱", tablet: "📲" };
+  function ago(ts) {
+    if (!ts) return "never";
+    var s = Math.max(0, ((Date.now() - ts) / 1000) | 0);
+    if (s < 45) return "just now";
+    if (s < 3600) return Math.round(s / 60) + "m ago";
+    if (s < 86400) return Math.round(s / 3600) + "h ago";
+    return Math.round(s / 86400) + "d ago";
+  }
+  function place(v) {
+    if (v.city) return v.city + ", " + (v.country === "US" && v.region ? v.region : countryName(v.country));
+    return countryName(v.country) || "Somewhere on Earth";
+  }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function title(s) { return (sites[s] && sites[s].name) || s; }
+
+  /* ---------- rendering ---------- */
+  function makeCard(site) {
+    var c = el("div", "card");
+    var top = el("div", "top");
+    var dot = el("span", "dot");
+    var name = el("span", "name");
+    var mute = el("button", "tiny m");
+    var x = el("button", "tiny x", "✕");
+    x.title = "Remove from dashboard (comes back if it gets a visitor)";
+    mute.onclick = function () { prefs.off[site] = !prefs.off[site]; savePrefs(); render(); };
+    x.onclick = function () { if (confirm("Remove " + title(site) + " from the dashboard?")) send({ t: "forget", site: site }); };
+    top.append(dot, name, mute, x);
+    var sid = el("div", "sid");
+    var nums = el("div", "nums");
+    var a = el("div"), b = el("div");
+    a.append(el("b", "on", "0"), el("span", "", "online now"));
+    b.append(el("b", "tot", "0"), el("span", "", "total visits"));
+    nums.append(a, b);
+    var last = el("div", "last");
+    var chip = el("button", "chip");
+    chip.title = "Preview this site's sound";
+    chip.onclick = function () { unlock(); play(soundFor(site)); };
+    c.append(top, sid, nums, last, chip);
+    return c;
+  }
+
+  function render() {
+    var list = Object.keys(sites).sort(function (a, b) {
+      var A = sites[a], B = sites[b];
+      return (B.online - A.online) || ((B.last_visit || 0) - (A.last_visit || 0)) || title(a).localeCompare(title(b));
+    });
+    var box = $("cards");
+    if (!list.length) {
+      if (!box.firstChild || !box.firstChild.classList || !box.firstChild.classList.contains("empty")) {
+        box.replaceChildren(el("div", "empty", got ? "No sites yet. They show up here once they report in." : "Connecting…"));
+      }
+    } else if (box.firstChild && box.firstChild.classList && box.firstChild.classList.contains("empty")) {
+      box.replaceChildren();
+    }
+    Object.keys(els).forEach(function (s) { if (!sites[s]) { els[s].remove(); delete els[s]; } });
+    var online = 0, live = 0;
+    list.forEach(function (s) {
+      var r = sites[s], c = els[s];
+      if (!c) { c = els[s] = makeCard(s); }
+      var isLive = r.online > 0;
+      online += r.online; if (isLive) live++;
+      c.classList.toggle("live", isLive);
+      c.classList.toggle("idle", !isLive);
+      c.querySelector(".name").textContent = title(s);
+      c.querySelector(".sid").textContent = r.name && r.name !== s ? s : "\u00a0";
+      var on = c.querySelector(".on"), tot = c.querySelector(".tot");
+      var onTxt = r.online.toLocaleString(), totTxt = r.total.toLocaleString();
+      if (on.textContent !== onTxt) { on.textContent = onTxt; bump(on); }
+      if (tot.textContent !== totTxt) { tot.textContent = totTxt; bump(tot); }
+      var lastV = null;
+      for (var i = 0; i < recent.length; i++) if (recent[i].site === s) { lastV = recent[i]; break; }
+      c.querySelector(".last").textContent = lastV
+        ? "Last: " + flag(lastV.country) + " " + place(lastV) + " · " + ago(lastV.ts)
+        : (r.last_visit ? "Last visit " + ago(r.last_visit) : "No visits recorded yet");
+      var nm = soundFor(s);
+      c.querySelector(".chip").textContent = "♪ " + nm;
+      var m = c.querySelector(".m");
+      m.textContent = prefs.off[s] ? "🔕" : "🔔";
+      m.title = prefs.off[s] ? "Muted: click to unmute this site" : "Click to mute this site";
+      box.appendChild(c); // appendChild moves existing nodes, which keeps them in sorted order
+    });
+    $("sumOn").textContent = online.toLocaleString();
+    $("sumSites").textContent = live;
+    $("sumAll").textContent = list.length;
+    document.title = (online > 0 ? "(" + online + ") " : "") + "Visitors · Live";
+  }
+  function bump(n) { n.classList.remove("pop"); void n.offsetWidth; n.classList.add("pop"); }
+
+  function renderFeed(newId) {
+    var ul = $("feed");
+    ul.replaceChildren();
+    if (!recent.length) { ul.append(el("li", "", "Waiting for visitors…")); return; }
+    recent.slice(0, 40).forEach(function (v) {
+      var li = el("li", v.id === newId ? "new" : "");
+      var t = el("div", "txt");
+      var bits = [title(v.site), ICON[v.device] || "", ago(v.ts)].filter(Boolean);
+      t.append(el("div", "l1", place(v)), el("div", "l2", bits.join(" · ") + (v.ref ? " · from " + v.ref : "")));
+      li.append(el("span", "flag", flag(v.country)), t);
+      ul.append(li);
+    });
+  }
+
+  function flash(site) {
+    var c = els[site];
+    if (!c) return;
+    c.classList.remove("hit"); void c.offsetWidth; c.classList.add("hit");
+  }
+
+  /* ---------- connection ---------- */
+  var ws = null, hb = 0, rf = 0, retry = 0, timer = 0, key = store.get(KEY) || "", authed = false;
+
+  function b64(s) {
+    var bytes = new TextEncoder().encode(s), bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).split("+").join("-").split("/").join("_").split("=").join("");
+  }
+  function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+  function showGate(msg) {
+    $("app").hidden = true; $("gate").hidden = false;
+    $("gateErr").textContent = msg || "";
+    $("keyIn").value = ""; $("keyIn").focus();
+  }
+  function showApp() { $("gate").hidden = true; $("app").hidden = false; }
+  function setLive(on) { $("hdr").classList.toggle("on", on); }
+
+  function checkKey() {
+    // Verify the key over a normal POST first, so "wrong key" can be told apart from "network is down".
+    return fetch("/dash/auth", { method: "POST", body: key, cache: "no-store" }).then(function (r) {
+      if (r.status === 204) return true;
+      if (r.status === 401) return false;
+      throw new Error("status " + r.status);
+    });
+  }
+
+  function connect() {
+    clearTimeout(timer);
+    if (!key) { showGate(""); return; }
+    var go = authed ? Promise.resolve(true) : checkKey();
+    go.then(function (ok) {
+      if (!ok) { store.del(KEY); key = ""; authed = false; showGate("That key didn't work."); return; }
+      authed = true;
+      open();
+    }, function () {
+      timer = setTimeout(connect, Math.min(30000, 1000 * Math.pow(2, retry++)) + Math.random() * 500);
+    });
+  }
+
+  function open() {
+    var url = location.origin.replace("http", "ws") + "/dash/ws";
+    try { ws = new WebSocket(url, ["visitors-dash", "k-" + b64(key)]); }
+    catch (e) { timer = setTimeout(connect, 5000); return; }
+    ws.onopen = function () {
+      retry = 0; setLive(true); showApp();
+      clearInterval(hb); clearInterval(rf);
+      hb = setInterval(function () { if (ws && ws.readyState === 1) ws.send("ping"); }, 25000);
+      rf = setInterval(function () { send({ t: "refresh" }); }, 120000); // re-sync counts every 2 min
+    };
+    ws.onmessage = function (e) {
+      if (e.data === "pong") return;
+      var m; try { m = JSON.parse(e.data); } catch (err) { return; }
+      handle(m);
+    };
+    ws.onclose = function () {
+      clearInterval(hb); clearInterval(rf); setLive(false);
+      timer = setTimeout(connect, Math.min(30000, 1000 * Math.pow(2, retry++)) + Math.random() * 500);
+    };
+    ws.onerror = function () { try { ws.close(); } catch (e) {} };
+  }
+
+  function setSites(rows) {
+    var next = {};
+    rows.forEach(function (r) { next[r.site] = r; });
+    sites = next;
+  }
+
+  function handle(m) {
+    if (m.type === "hello") {
+      got = true;
+      setSites(m.sites || []);
+      recent = m.recent || [];
+      render(); renderFeed();
+    } else if (m.type === "sites") {
+      setSites(m.sites || []);
+      render();
+    } else if (m.type === "site") {
+      var before = sites[m.site.site];
+      sites[m.site.site] = m.site;
+      if (m.kind === "join" && m.v) {
+        recent.unshift(m.v); recent = recent.slice(0, 60);
+        render(); renderFeed(m.v.id); flash(m.site.site);
+        if (!prefs.off[m.site.site]) play(soundFor(m.site.site));
+      } else {
+        render();
+        if (m.kind === "leave" && before && prefs.leave && !prefs.off[m.site.site]) playLeave();
+      }
+    } else if (m.type === "forgot") {
+      delete sites[m.site];
+      recent = recent.filter(function (v) { return v.site !== m.site; });
+      render(); renderFeed();
+    }
+  }
+
+  /* ---------- controls ---------- */
+  var modeSel = $("mode");
+  var optSite = el("option", "", "different per site"); optSite.value = "site"; modeSel.append(optSite);
+  NAMES.forEach(function (n) { var o = el("option", "", n); o.value = n; modeSel.append(o); });
+  modeSel.value = prefs.mode;
+  modeSel.onchange = function () { prefs.mode = modeSel.value; savePrefs(); render(); unlock(); if (prefs.mode !== "site") play(prefs.mode); };
+
+  $("vol").value = prefs.vol;
+  $("vol").oninput = function () { prefs.vol = parseFloat($("vol").value); if (master) master.gain.value = prefs.vol; savePrefs(); };
+  $("leave").checked = !!prefs.leave;
+  $("leave").onchange = function () { prefs.leave = $("leave").checked; savePrefs(); };
+
+  function drawMute() { $("muteBtn").textContent = prefs.mute ? "🔇 Sound off" : "🔊 Sound on"; syncLock(); }
+  $("muteBtn").onclick = function () { prefs.mute = !prefs.mute; savePrefs(); unlock(); drawMute(); };
+  drawMute();
+
+  var testIdx = 0;
+  $("test").onclick = function () {
+    unlock();
+    var n = prefs.mode === "site" ? NAMES[testIdx++ % NAMES.length] : prefs.mode;
+    $("test").textContent = "▶ " + n;
+    setTimeout(function () { $("test").textContent = "▶ Test"; }, 1200);
+    setTimeout(function () { play(n); }, 60);
+  };
+
+  var wl = null;
+  function setAwake(on) {
+    if (on && navigator.wakeLock) {
+      navigator.wakeLock.request("screen").then(function (l) {
+        wl = l; l.addEventListener("release", function () { wl = null; });
+      }, function () {});
+    } else if (!on && wl) { wl.release(); wl = null; }
+  }
+  $("awake").checked = !!prefs.awake;
+  $("awake").onchange = function () { prefs.awake = $("awake").checked; savePrefs(); setAwake(prefs.awake); };
+  if (!navigator.wakeLock) $("awake").parentNode.hidden = true;
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && prefs.awake && !wl) setAwake(true);
+  });
+  if (prefs.awake) setAwake(true);
+
+  $("out").onclick = function () {
+    store.del(KEY); key = ""; authed = false;
+    clearTimeout(timer); clearInterval(hb); clearInterval(rf);
+    if (ws) { ws.onclose = null; try { ws.close(); } catch (e) {} }
+    sites = {}; recent = []; got = false; render(); renderFeed();
+    showGate("");
+  };
+
+  $("gateForm").onsubmit = function (e) {
+    e.preventDefault();
+    var v = $("keyIn").value.trim();
+    if (!v) return;
+    key = v; authed = false; retry = 0;
+    store.set(KEY, key);
+    $("gateErr").textContent = "Checking…";
+    connect();
+  };
+
+  $("addForm").onsubmit = function (e) {
+    e.preventDefault();
+    var v = $("addIn").value.trim().toLowerCase();
+    if (!v) return;
+    send({ t: "add", site: v });
+    $("addIn").value = "";
+  };
+
+  setInterval(function () { if (!$("app").hidden) { render(); renderFeed(); } }, 30000); // keeps "3m ago" fresh
+
+  if (key) showApp();
+  render(); renderFeed();
+  connect();
+})();
+</script>
+</body>
+</html>
