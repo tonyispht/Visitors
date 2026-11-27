@@ -4,12 +4,21 @@
   "main": "src/index.js",
   "compatibility_date": "2026-11-01",
   "assets": { "directory": "./public", "binding": "ASSETS" },
-  "durable_objects": { "bindings": [{ "name": "HUB", "class_name": "Hub" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Hub"] }],
+  "durable_objects": {
+    "bindings": [
+      { "name": "HUB", "class_name": "Hub" },
+      { "name": "REGISTRY", "class_name": "Registry" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Hub"] },
+    { "tag": "v2", "new_sqlite_classes": ["Registry"] }
+  ],
   "vars": {
     // Optional soft lock: comma-separated hostnames allowed to connect (subdomains included).
     // Empty = any site that knows a site ID can connect. Example: "yourdomain.com,itch.zone,github.io"
     "ALLOWED_ORIGINS": ""
   },
+  // Private dashboard key: set with `npx wrangler secret put DASH_KEY` (never commit it).
   "observability": { "enabled": true }
 }
